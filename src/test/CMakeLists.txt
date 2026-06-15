@@ -46,6 +46,7 @@ add_executable(test_bitcoin
   feefrac_tests.cpp
   feerounder_tests.cpp
   flatfile_tests.cpp
+  format_tests.cpp
   fs_tests.cpp
   getarg_tests.cpp
   hash_tests.cpp
