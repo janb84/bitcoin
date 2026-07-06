@@ -23,7 +23,6 @@ cmake_path(ABSOLUTE_PATH LIBEXEC_DIR NORMALIZE)
 # Other variables required by the `setup.nsi.in` template.
 set(CLIENT_TARNAME "bitcoin")
 set(BITCOIN_WRAPPER_NAME "bitcoin")
-set(BITCOIN_GUI_NAME "bitcoin-qt")
 set(BITCOIN_DAEMON_NAME "bitcoind")
 set(BITCOIN_CLI_NAME "bitcoin-cli")
 set(BITCOIN_TX_NAME "bitcoin-tx")

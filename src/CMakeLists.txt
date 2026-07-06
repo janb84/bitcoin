@@ -180,7 +180,7 @@ if(ENABLE_WALLET)
 endif()
 
 
-# P2P and RPC server functionality used by `bitcoind` and `bitcoin-qt` executables.
+# P2P and RPC server functionality used by `bitcoind` executable.
 add_library(bitcoin_node STATIC EXCLUDE_FROM_ALL
   addrdb.cpp
   addrman.cpp
@@ -391,11 +391,6 @@ if(BUILD_UTIL)
     univalue
   )
   install_binary_component(bitcoin-util HAS_MANPAGE)
-endif()
-
-
-if(BUILD_GUI)
-  add_subdirectory(qt)
 endif()
 
 
