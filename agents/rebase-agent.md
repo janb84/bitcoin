@@ -102,7 +102,14 @@ PR when identifiable. "Unknown cause" is acceptable only after you looked.
    upstream reintroduces the behavior, so this sweep is the only step that
    catches such drift; a hit you cannot classify as inert or removable
    escalates like rung 5.
-2. Full build; upstream unit and functional suites; all `fork_*` tests.
+2. Full build; upstream unit and functional suites; all `fork_*` tests; the
+   full lint suite (`test/lint/`); and the CI matrix. Run the whole tree's
+   checks, not just the targets the changed files touch. For deletion
+   patches this is where grep-invisible breakage surfaces — a stale lint
+   expectation, a removed build target still named in a CI `GOAL`, an edit
+   that crossed a subtree boundary (`lint-subtree`). The sweep in step 1
+   does not catch these; only running the checks does. A deletion patch is
+   not verified until the lints and CI matrix are green.
 3. **Negative control:** on the bare base `H` (series absent), run each
    patch's tests. Each must **fail** there. A patch whose tests pass without
    it has a rotted contract. Escalate it as rung 5; it must not ship on

@@ -20,6 +20,8 @@ bitcoin/                        # fork of bitcoin/bitcoin
 ├── .github/workflows/          # OPTIONAL: CI runners; §5/§6        (fork-meta)
 │   ├── fork-rebase.yml         #   scheduled agentic rebase (see §5)
 │   └── upstream-watch.yml      #   scheduled upstream monitoring (see §6)
+│                               #   (kept as *.yml.disabled while unused:
+│                               #    Actions parses every *.yml in this dir)
 ├── patches/                    # each dir added by its own patch commit (fork/<hash>)
 │   ├── 01-example-feature/
 │   │   ├── SPEC.md             # intent, invariants, touchpoints (see §3)
@@ -141,6 +143,14 @@ Follow them and most rebases are trivial; skip them and no amount of AI saves yo
      exceptions) that is run on the new base after every rebase, with new hits
      removed inside the same patch commit. Expect hits; upstream keeps writing
      about the thing you deleted.
+   - The sweep is necessary but **not sufficient**: it only finds what is
+     *named* like the deleted thing. Removing a subsystem also breaks things
+     that are not: stale lint expectations, a build target still requested by
+     name in CI, a boundary check (subtrees). Those surface only when the full
+     lint suite and CI matrix run, so a deletion patch is not verified until
+     they do (§5 step 6). Exclude git subtrees (`src/ipc/libmultiprocess`)
+     from both the deletion and the sweep: their contents change only via a
+     subtree merge, never a hunk in this patch.
 
    Large or repetitive deletions ("remove every call to Foo") belong under the
    mechanical-script rule below.
@@ -299,7 +309,24 @@ Pipeline:
    without its patch no longer encodes the contract (upstream may have absorbed,
    renamed, or hollowed out the behavior). Treat it as rung 5, not as success.
 6. After the full series: build, run upstream unit + functional tests, run all
-   `fork_*` tests.
+   `fork_*` tests, **and run the full lint suite (`test/lint/`) plus the
+   CI matrix** — not just the targets the changed files obviously touch.
+   This is doubly required for deletion patches (§2.4): the reference sweep
+   only catches reintroductions *named* like the deleted thing, and much of
+   what a deletion breaks is not. Three real examples from the remove-the-GUI
+   patch, none grep-visible, each caught only by a check being actually run:
+   - a stale expectation left behind: dead `qt/*` entries in
+     `lint-circular-dependencies.py`'s expected-cycles list, caught by the
+     lint, not the sweep;
+   - a removed build *target* still named in CI: the macOS `deploy` target
+     was GUI-only and is now gone, but mac CI still asked for
+     `GOAL="deploy"` → `ninja: error: unknown target 'deploy'`, caught only
+     by running the mac job;
+   - a boundary crossed: an edit inside the `src/ipc/libmultiprocess` git
+     subtree, caught by `lint-subtree`, not the build.
+   A deletion patch is not verified until the lints and the CI matrix that
+   exercise the *whole* tree have run green, because that is the only layer
+   that sees couplings the sweep is blind to.
 7. Open a PR from `rebase/<H>` to `fork/<H>` (freshly created at the bare
    base, so the PR is exactly the series and merges fast-forward), headed by
    the base-delta summary from step 1 and containing per patch:
