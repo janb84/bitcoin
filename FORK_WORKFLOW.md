@@ -117,18 +117,33 @@ Follow them and most rebases are trivial; skip them and no amount of AI saves yo
    notifications, new RPC methods. A patch that only *adds* an RPC never
    conflicts on behavior, only occasionally on registration tables.
 
-4. **Removing upstream behavior: disable, don't delete.** Wrap the behavior in
-   a guard (`if (!ForkIsXDisabled()) { ... }`, a config flag, or chain params)
+4. **Removing upstream behavior: disable, don't delete — unless the point is
+   to stop carrying it.** Wrap the behavior in a guard
+   (`if (!ForkIsXDisabled()) { ... }`, a config flag, or chain params)
    instead of deleting the lines. A guard is one small touchpoint that rarely
    conflicts; a 40-line deletion owns every future upstream edit to those lines.
-   If code truly must go, the deletion is still just a diff: the durable parts
-   are the spec's intent and a test asserting the behavior is *globally absent*
-   (e.g. "node never responds to message X"), not that specific lines are gone.
-   That matters because deletions fail silently in the opposite direction from
-   additions: if upstream adds a new call site to the removed behavior, the
-   patch still applies cleanly and nothing conflicts; only a behavioral test
-   catches it. Large or repetitive deletions ("remove every call to Foo")
-   belong under the mechanical-script rule below.
+
+   The exception is a patch whose purpose is shedding a subsystem's *carrying
+   cost* — its source tree, depends packages, CI time, review surface — rather
+   than changing behavior (e.g. removing the GUI, which upstream already
+   disables by default). There a guard buys nothing: the subsystem would still
+   be carried. Delete it, and accept the trade with open eyes:
+
+   - The durable parts are the spec's intent and a test asserting the thing is
+     *globally absent* (e.g. "no build option produces the binary", "node never
+     responds to message X"), not that specific lines are gone.
+   - Deletions fail silently in the opposite direction from additions: if
+     upstream adds a new reference to the deleted subsystem — a doc sentence, a
+     CI flag, a call site — the patch still applies cleanly and nothing
+     conflicts. The absence test only catches reintroductions where it looks.
+   - So a deletion patch's spec must also carry a **reference sweep** in its
+     `Known upstream coupling` section: a grep pattern (plus known-inert
+     exceptions) that is run on the new base after every rebase, with new hits
+     removed inside the same patch commit. Expect hits; upstream keeps writing
+     about the thing you deleted.
+
+   Large or repetitive deletions ("remove every call to Foo") belong under the
+   mechanical-script rule below.
 
 5. **Never touch consensus code unless the patch's entire purpose is consensus.**
    If it is, it gets the `consensus: true` flag in its spec (see §3) and the
@@ -207,7 +222,10 @@ message-type dispatch, after preliminary checks.
 
 The `Known upstream coupling` section is the highest-value part for the agent:
 it says where the hook *conceptually* belongs when the code it anchored to
-has been restructured.
+has been restructured. For deletion patches (§2.4) this section must also
+carry the reference sweep: the grep pattern that finds reintroduced
+references to the deleted subsystem, plus the list of intentionally kept,
+inert references so the sweep's output stays reviewable.
 
 ---
 
@@ -270,21 +288,27 @@ Pipeline:
    lists, plus files the patch itself adds. A violation means the spec has
    rotted or the patch has sprawled; that gets fixed first, not rebased around.
 3. For each patch in `SERIES.md` order, walk the ladder in §4.
-4. **Negative control**: run each patch's tests against the bare base, with
+4. **Reference sweep**: for each spec whose `Known upstream coupling` defines
+   a sweep (deletion patches, §2.4), run it on the rebased tree. New hits are
+   upstream references to deleted things; remove them inside that patch's
+   commit and note them in the PR. A sweep hit is expected maintenance, not a
+   conflict — but a hit the agent cannot classify as inert or removable
+   escalates like any rung-5 case.
+5. **Negative control**: run each patch's tests against the bare base, with
    the series absent. Every patch's tests must *fail* there. A test that passes
    without its patch no longer encodes the contract (upstream may have absorbed,
    renamed, or hollowed out the behavior). Treat it as rung 5, not as success.
-5. After the full series: build, run upstream unit + functional tests, run all
+6. After the full series: build, run upstream unit + functional tests, run all
    `fork_*` tests.
-6. Open a PR from `rebase/<H>` to `fork/<H>` (freshly created at the bare
+7. Open a PR from `rebase/<H>` to `fork/<H>` (freshly created at the bare
    base, so the PR is exactly the series and merges fast-forward), headed by
    the base-delta summary from step 1 and containing per patch:
    - which rung it needed,
    - what upstream change caused any conflict (linked upstream PR when identifiable),
    - for rung 3-4: the agent's reasoning and a self-assessment of risk,
    - test results, including the negative control.
-7. On failure at any rung 5 situation: open an issue instead, with the analysis.
-8. After the PR merges: the human deletes the previous `fork/<hash>`
+8. On failure at any rung 5 situation: open an issue instead, with the analysis.
+9. After the PR merges: the human deletes the previous `fork/<hash>`
    (archive-tag it first if you want it retrievable, §1). This is a human
    step by design: the bot never deletes branches.
 
@@ -384,6 +408,9 @@ Reviewer checklist for rung 3-4 patches:
 - [ ] The touchpoint list in SPEC.md still matches reality; if hooks moved,
       the rebase PR updates SPEC.md inside the same patch commit.
 - [ ] No new fork symbols leak outside the patch's files without the `Fork` prefix.
+- [ ] For deletion patches (§2.4): the spec's reference sweep was run on the
+      new base, its hits are addressed in the PR, and any references the PR
+      leaves in place are on the spec's known-inert list — not silently new.
 
 The failure mode to guard against is not a build break (CI catches that); it is
 a patch that **compiles and passes its tests but is subtly wrong on the new

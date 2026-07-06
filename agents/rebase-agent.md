@@ -94,8 +94,16 @@ PR when identifiable. "Unknown cause" is acceptable only after you looked.
 
 ### 3. Series verification
 
-1. Full build; upstream unit and functional suites; all `fork_*` tests.
-2. **Negative control:** on the bare base `H` (series absent), run each
+1. **Reference sweep** (FORK_WORKFLOW.md §2.4/§5): for each spec whose
+   `Known upstream coupling` defines a sweep — deletion patches — run its
+   grep on the rebased tree. Hits not on the spec's known-inert list are
+   upstream references to deleted things: remove each inside the owning
+   patch's commit and list it in the PR. Deletions apply cleanly even when
+   upstream reintroduces the behavior, so this sweep is the only step that
+   catches such drift; a hit you cannot classify as inert or removable
+   escalates like rung 5.
+2. Full build; upstream unit and functional suites; all `fork_*` tests.
+3. **Negative control:** on the bare base `H` (series absent), run each
    patch's tests. Each must **fail** there. A patch whose tests pass without
    it has a rotted contract. Escalate it as rung 5; it must not ship on
    green.
@@ -113,6 +121,7 @@ PR with the base delta summary (setup step 3), then one section per patch:
 - Reasoning: (rung 3-4 only: what you did and why, 2-6 sentences)
 - Risk: low | medium | high, one sentence why
 - Tests: pass · negative control: fails on bare base ✓
+- Sweep: (deletion patches only) N new upstream references removed, listed
 ```
 
 **Any rung-5 patch:** open an issue instead of a PR. Per escalated patch:
