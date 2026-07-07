@@ -39,6 +39,14 @@ def main():
         "-DAPPEND_CFLAGS='-O3 -g2'",
         "-DCMAKE_BUILD_TYPE=Debug",
         "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON",
+        # This fork ships no GUI, so the CI image installs no Qt. Commits
+        # before the GUI removal still carry src/qt and would ask for it, so
+        # keep the GUI off for every commit in the series. These take
+        # precedence over the preset; once the removal is applied they are
+        # simply unused variables.
+        "-DBUILD_GUI=OFF",
+        "-DBUILD_GUI_TESTS=OFF",
+        "-DWITH_QRENCODE=OFF",
         "--preset=dev-mode",
         # Tolerate unused (member) functions in intermediate commits in a pull request
         "-DCMAKE_CXX_FLAGS=-Wno-error=unused-member-function -Wno-error=unused-function",
