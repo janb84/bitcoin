@@ -386,12 +386,14 @@ BASE_SCRIPTS = [
     'rpc_gettxspendingprevout.py',
     'rpc_help.py',
     'feature_framework_testshell.py',
+    'fork_no_gui.py',
     'tool_rpcauth.py',
     'p2p_handshake.py',
     'p2p_handshake.py --v2transport',
     'interface_ipc_cli.py',
     'feature_dirsymlinks.py',
     'feature_help.py',
+    'fork_conventions.py',
     'feature_framework_startup_failures.py',
     'feature_shutdown.py',
     'wallet_migration.py',
@@ -868,7 +870,7 @@ class TestResult():
 def check_script_prefixes():
     """Check that test scripts start with one of the allowed name prefixes."""
 
-    good_prefixes_re = re.compile("^(example|feature|interface|mempool|mining|p2p|rpc|wallet|tool)_")
+    good_prefixes_re = re.compile("^(example|feature|fork|interface|mempool|mining|p2p|rpc|wallet|tool)_")
     bad_script_names = [script for script in ALL_SCRIPTS if good_prefixes_re.match(script) is None]
 
     if bad_script_names:

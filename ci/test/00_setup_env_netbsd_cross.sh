@@ -27,7 +27,6 @@ export DEP_OPTS="build_CC=clang build_CXX=clang++ \
 export GOAL="install"
 export BITCOIN_CONFIG="\
  --preset=dev-mode \
- -DBUILD_GUI=OFF \
  -DREDUCE_EXPORTS=ON \
  -DWITH_USDT=OFF \
 "

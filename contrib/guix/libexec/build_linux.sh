@@ -79,7 +79,6 @@ mkdir -p "$DISTSRC"
           -Werror=dev \
           -DBUILD_BENCH=OFF \
           -DBUILD_FUZZ_BINARY=OFF \
-          -DBUILD_GUI=OFF \
           -DCMAKE_INSTALL_PREFIX="${INSTALLPATH}" \
           -DCMAKE_SKIP_RPATH=TRUE \
           -DREDUCE_EXPORTS=ON \
